@@ -1,6 +1,6 @@
 from django.db import models
 import hashlib
-
+import json
 
 class AnalyzedString(models.Model):
     value = models.TextField(unique=True)  # The actual string provided by user
