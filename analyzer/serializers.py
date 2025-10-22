@@ -4,7 +4,7 @@ from .models import AnalyzedString
 from .utils import analyze_string
 
 class AnalyzedStringSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(source='sha256_hash', read_only=True)  # present id as sha256_hash
+    id = serializers.CharField(source='sha256_hash', read_only=True)
 
     class Meta:
         model = AnalyzedString
@@ -15,13 +15,11 @@ class AnalyzedStringSerializer(serializers.ModelSerializer):
             'is_palindrome',
             'unique_characters',
             'word_count',
-            'sha256_hash',
             'character_frequency_map',
             'created_at',
         ]
         read_only_fields = [
             'id',
-            'sha256_hash',
             'length',
             'is_palindrome',
             'unique_characters',
@@ -31,25 +29,33 @@ class AnalyzedStringSerializer(serializers.ModelSerializer):
         ]
 
     def validate_value(self, value):
-        # Missing/empty check handled by required field; here we enforce type
+        # Type validation
         if not isinstance(value, str):
             raise serializers.ValidationError("Value must be a string.")
-        if not value.strip():
+        
+        # Empty/whitespace validation
+        if not value or not value.strip():
             raise serializers.ValidationError("Value cannot be empty or whitespace.")
+        
         return value
 
     def create(self, validated_data):
         value = validated_data.get("value")
+        
+        # Analyze the string
         analysis = analyze_string(value)
-
-        # Duplicate check: if sha256 already exists, raise ValidationError (view maps this to 409)
-        if AnalyzedString.objects.filter(sha256_hash=analysis["sha256_hash"]).exists():
-            # Raise with this exact message so view can identify it
-            raise serializers.ValidationError("String already exists in the system.")
-
+        
+        # Check for duplicate - let the view handle 409 response
+        sha256_hash = analysis["sha256_hash"]
+        if AnalyzedString.objects.filter(sha256_hash=sha256_hash).exists():
+            raise serializers.ValidationError({
+                "value": "A string with this value already exists."
+            })
+        
+        # Create the object
         return AnalyzedString.objects.create(
             value=value,
-            sha256_hash=analysis["sha256_hash"],
+            sha256_hash=sha256_hash,
             length=analysis["length"],
             is_palindrome=analysis["is_palindrome"],
             unique_characters=analysis["unique_characters"],
