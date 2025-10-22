@@ -1,1 +1,1 @@
-web: gunicorn analyzer.wsgi
+web: gunicorn myproject.wsgi
