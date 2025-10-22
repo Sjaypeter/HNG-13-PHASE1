@@ -2,7 +2,7 @@ from rest_framework import status, generics, serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from .models import AnalyzedString
+from analyzer . models import AnalyzedString
 from .serializers import AnalyzedStringSerializer
 import re
 
